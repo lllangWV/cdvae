@@ -9,6 +9,7 @@ import numpy as np
 import sympy as sym
 from scipy import special as sp
 from scipy.optimize import brentq
+from scipy.special import factorial
 
 
 def Jn(r, n):
@@ -80,8 +81,7 @@ def bessel_basis(n, k):
         for i in range(k):
             bess_basis_tmp += [
                 sym.simplify(
-                    normalizer[order][i]
-                    * f[order].subs(x, zeros[order, i] * x)
+                    normalizer[order][i] * f[order].subs(x, zeros[order, i] * x)
                 )
             ]
         bess_basis += [bess_basis_tmp]
@@ -107,14 +107,12 @@ def sph_harm_prefactor(l_degree, m_order):
     return (
         (2 * l_degree + 1)
         / (4 * np.pi)
-        * np.math.factorial(l_degree - abs(m_order))
-        / np.math.factorial(l_degree + abs(m_order))
+        * factorial(l_degree - abs(m_order))
+        / factorial(l_degree + abs(m_order))
     ) ** 0.5
 
 
-def associated_legendre_polynomials(
-    L_maxdegree, zero_m_only=True, pos_m_only=True
-):
+def associated_legendre_polynomials(L_maxdegree, zero_m_only=True, pos_m_only=True):
     """Computes string formulas of the associated legendre polynomials up to degree L (excluded).
 
     Parameters
@@ -156,7 +154,7 @@ def associated_legendre_polynomials(
             for l_degree in range(1, L_maxdegree):
                 P_l_m[l_degree][l_degree] = sym.simplify(
                     (1 - 2 * l_degree)
-                    * (1 - z ** 2) ** 0.5
+                    * (1 - z**2) ** 0.5
                     * P_l_m[l_degree - 1][l_degree - 1]
                 )  # P_00, P_11, P_22, P_33
 
@@ -169,11 +167,8 @@ def associated_legendre_polynomials(
                 for m_order in range(l_degree - 1):  # P_20, P_30, P_31
                     P_l_m[l_degree][m_order] = sym.simplify(
                         (
-                            (2 * l_degree - 1)
-                            * z
-                            * P_l_m[l_degree - 1][m_order]
-                            - (l_degree + m_order - 1)
-                            * P_l_m[l_degree - 2][m_order]
+                            (2 * l_degree - 1) * z * P_l_m[l_degree - 1][m_order]
+                            - (l_degree + m_order - 1) * P_l_m[l_degree - 2][m_order]
                         )
                         / (l_degree - m_order)
                     )
@@ -181,13 +176,11 @@ def associated_legendre_polynomials(
             if not pos_m_only:
                 # for m < 0: P_l(-m) = (-1)^m * (l-m)!/(l+m)! * P_lm
                 for l_degree in range(1, L_maxdegree):
-                    for m_order in range(
-                        1, l_degree + 1
-                    ):  # P_1(-1), P_2(-1) P_2(-2)
+                    for m_order in range(1, l_degree + 1):  # P_1(-1), P_2(-1) P_2(-2)
                         P_l_m[l_degree][-m_order] = sym.simplify(
                             (-1) ** m_order
-                            * np.math.factorial(l_degree - m_order)
-                            / np.math.factorial(l_degree + m_order)
+                            * factorial(l_degree - m_order)
+                            / factorial(l_degree + m_order)
                             * P_l_m[l_degree][m_order]
                         )
 
@@ -259,7 +252,7 @@ def real_sph_harm(L_maxdegree, use_theta, use_phi=True, zero_m_only=True):
             # m > 0
             for m_order in range(1, l_degree + 1):
                 Y_l_m[l_degree][m_order] = sym.simplify(
-                    2 ** 0.5
+                    2**0.5
                     * (-1) ** m_order
                     * sph_harm_prefactor(l_degree, m_order)
                     * P_l_m[l_degree][m_order]
@@ -268,7 +261,7 @@ def real_sph_harm(L_maxdegree, use_theta, use_phi=True, zero_m_only=True):
             # m < 0
             for m_order in range(1, l_degree + 1):
                 Y_l_m[l_degree][-m_order] = sym.simplify(
-                    2 ** 0.5
+                    2**0.5
                     * (-1) ** m_order
                     * sph_harm_prefactor(l_degree, -m_order)
                     * P_l_m[l_degree][m_order]

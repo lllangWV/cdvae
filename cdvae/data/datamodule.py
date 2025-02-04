@@ -1,18 +1,16 @@
 import random
-from typing import Optional, Sequence
 from pathlib import Path
+from typing import Optional, Sequence
 
-import hydra
 import numpy as np
 import omegaconf
-import pytorch_lightning as pl
 import torch
 from omegaconf import DictConfig
 from torch.utils.data import Dataset
 from torch_geometric.data import DataLoader
 
-from cdvae.common.utils import PROJECT_ROOT
 from cdvae.common.data_utils import get_scaler_from_data_list
+from cdvae.common.utils import PROJECT_ROOT
 
 
 def worker_init_fn(id: int):
@@ -61,15 +59,14 @@ class CrystDataModule(pl.LightningDataModule):
         if scaler_path is None:
             train_dataset = hydra.utils.instantiate(self.datasets.train)
             self.lattice_scaler = get_scaler_from_data_list(
-                train_dataset.cached_data,
-                key='scaled_lattice')
+                train_dataset.cached_data, key="scaled_lattice"
+            )
             self.scaler = get_scaler_from_data_list(
-                train_dataset.cached_data,
-                key=train_dataset.prop)
+                train_dataset.cached_data, key=train_dataset.prop
+            )
         else:
-            self.lattice_scaler = torch.load(
-                Path(scaler_path) / 'lattice_scaler.pt')
-            self.scaler = torch.load(Path(scaler_path) / 'prop_scaler.pt')
+            self.lattice_scaler = torch.load(Path(scaler_path) / "lattice_scaler.pt")
+            self.scaler = torch.load(Path(scaler_path) / "prop_scaler.pt")
 
     def setup(self, stage: Optional[str] = None):
         """
@@ -144,8 +141,9 @@ def main(cfg: omegaconf.DictConfig):
     datamodule: pl.LightningDataModule = hydra.utils.instantiate(
         cfg.data.datamodule, _recursive_=False
     )
-    datamodule.setup('fit')
+    datamodule.setup("fit")
     import pdb
+
     pdb.set_trace()
 
 

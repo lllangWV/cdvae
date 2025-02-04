@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Optional
 
 import dotenv
-import pytorch_lightning as pl
 from omegaconf import DictConfig, OmegaConf
 
 
@@ -19,8 +18,7 @@ def get_env(env_name: str, default: Optional[str] = None) -> str:
     """
     if env_name not in os.environ:
         if default is None:
-            raise KeyError(
-                f"{env_name} not defined and no default value is present!")
+            raise KeyError(f"{env_name} not defined and no default value is present!")
         return default
 
     env_value: str = os.environ[env_name]
@@ -53,10 +51,11 @@ STATS_KEY: str = "stats"
 # Adapted from https://github.com/hobogalaxy/lightning-hydra-template/blob/6bf03035107e12568e3e576e82f83da0f91d6a11/src/utils/template_utils.py#L125
 def log_hyperparameters(
     cfg: DictConfig,
-    model: pl.LightningModule,
-    trainer: pl.Trainer,
+    model,
+    trainer,
 ) -> None:
     """This method controls which parameters from Hydra config are saved by Lightning loggers.
+
     Additionally saves:
         - sizes of train, val, test dataset
         - number of trainable model parameters
@@ -68,8 +67,7 @@ def log_hyperparameters(
     hparams = OmegaConf.to_container(cfg, resolve=True)
 
     # save number of model parameters
-    hparams[f"{STATS_KEY}/params_total"] = sum(p.numel()
-                                               for p in model.parameters())
+    hparams[f"{STATS_KEY}/params_total"] = sum(p.numel() for p in model.parameters())
     hparams[f"{STATS_KEY}/params_trainable"] = sum(
         p.numel() for p in model.parameters() if p.requires_grad
     )

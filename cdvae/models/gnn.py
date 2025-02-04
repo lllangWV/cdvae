@@ -3,8 +3,7 @@
 
 import torch
 import torch.nn as nn
-from torch_scatter import scatter
-from torch_geometric.nn.acts import swish
+from torch.nn import SiLU
 from torch_geometric.nn.inits import glorot_orthogonal
 from torch_geometric.nn.models.dimenet import (
     BesselBasisLayer,
@@ -12,19 +11,22 @@ from torch_geometric.nn.models.dimenet import (
     ResidualLayer,
     SphericalBasisLayer,
 )
+from torch_scatter import scatter
 from torch_sparse import SparseTensor
 
 from cdvae.common.data_utils import (
-    get_pbc_distances,
     frac_to_cart_coords,
+    get_pbc_distances,
     radius_graph_pbc_wrapper,
 )
-from cdvae.pl_modules.gemnet.gemnet import GemNetT
+from cdvae.models.gemnet.gemnet import GemNetT
 
 try:
     import sympy as sym
 except ImportError:
     sym = None
+
+swish = SiLU()
 
 
 class InteractionPPBlock(torch.nn.Module):
@@ -60,17 +62,11 @@ class InteractionPPBlock(torch.nn.Module):
 
         # Residual layers before and after skip connection.
         self.layers_before_skip = torch.nn.ModuleList(
-            [
-                ResidualLayer(hidden_channels, act)
-                for _ in range(num_before_skip)
-            ]
+            [ResidualLayer(hidden_channels, act) for _ in range(num_before_skip)]
         )
         self.lin = nn.Linear(hidden_channels, hidden_channels)
         self.layers_after_skip = torch.nn.ModuleList(
-            [
-                ResidualLayer(hidden_channels, act)
-                for _ in range(num_after_skip)
-            ]
+            [ResidualLayer(hidden_channels, act) for _ in range(num_after_skip)]
         )
 
         self.reset_parameters()
@@ -315,7 +311,7 @@ class DimeNetPlusPlusWrap(DimeNetPlusPlus):
         num_before_skip=1,
         num_after_skip=2,
         num_output_layers=3,
-        readout='mean',
+        readout="mean",
     ):
         self.num_targets = num_targets
         self.cutoff = cutoff
@@ -352,10 +348,8 @@ class DimeNetPlusPlusWrap(DimeNetPlusPlus):
             data.num_bonds = neighbors
 
         pos = frac_to_cart_coords(
-            data.frac_coords,
-            data.lengths,
-            data.angles,
-            data.num_atoms)
+            data.frac_coords, data.lengths, data.angles, data.num_atoms
+        )
 
         out = get_pbc_distances(
             data.frac_coords,
@@ -365,7 +359,7 @@ class DimeNetPlusPlusWrap(DimeNetPlusPlus):
             data.to_jimages,
             data.num_atoms,
             data.num_bonds,
-            return_offsets=True
+            return_offsets=True,
         )
 
         edge_index = out["edge_index"]
@@ -406,12 +400,13 @@ class DimeNetPlusPlusWrap(DimeNetPlusPlus):
 
         # Use mean
         if batch is None:
-            if self.readout == 'mean':
+            if self.readout == "mean":
                 energy = P.mean(dim=0)
-            elif self.readout == 'sum':
+            elif self.readout == "sum":
                 energy = P.sum(dim=0)
-            elif self.readout == 'cat':
+            elif self.readout == "cat":
                 import pdb
+
                 pdb.set_trace()
                 energy = torch.cat([P.sum(dim=0), P.mean(dim=0)])
             else:
@@ -468,6 +463,6 @@ class GemNetTEncoder(nn.Module):
             angles=data.angles,
             edge_index=data.edge_index,
             to_jimages=data.to_jimages,
-            num_bonds=data.num_bonds
+            num_bonds=data.num_bonds,
         )
         return output
